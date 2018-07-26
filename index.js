@@ -27,6 +27,7 @@ const createAndTagTable = async function createAndTagTable(region, tableName, se
   } catch (error) {
     if (error.code === 'ResourceInUseException') {
       cli.consoleLog(`CreateGlobalTable: ${chalk.yellow(`Table ${tableName} already exists in the region ${region}`)}`)
+      return;
     }
     throw error
   }
