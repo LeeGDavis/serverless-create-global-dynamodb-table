@@ -55,11 +55,12 @@ const createGlobalTable = async function createGlobalTable(
   const dynamodb = new AWS.DynamoDB({
     credentials: creds,
     region,
-  })
+  });
+
   try {
     await dynamodb.describeGlobalTable({ GlobalTableName: tableName }).promise()
-    cli.consoleLog(`CreateGlobalTable: ${chalk.yellow('Global table already exists. Skipping creation...')}`)
-    return
+    cli.consoleLog(`CreateGlobalTable: ${chalk.yellow('Global table already exists. Skipping creation...')}`);
+    return;
   } catch (e) {
     if (e.code !== 'GlobalTableNotFoundException') {
       throw e
@@ -67,30 +68,23 @@ const createGlobalTable = async function createGlobalTable(
     cli.consoleLog(`CreateGlobalTable: ${chalk.yellow('Global table doesn\'t exist...')}`)
   }
 
-  const tableDef = await dynamodb.describeTable({ TableName: tableName }).promise()
-
-  const { ReadCapacityUnits, WriteCapacityUnits } = tableDef.Table.ProvisionedThroughput
-  const createTableParams = {
-    AttributeDefinitions: tableDef.Table.AttributeDefinitions,
-    KeySchema: tableDef.Table.KeySchema,
-    ProvisionedThroughput: { ReadCapacityUnits, WriteCapacityUnits },
-    TableName: tableName,
-    StreamSpecification: {
-      StreamEnabled: true,
-      StreamViewType: 'NEW_AND_OLD_IMAGES',
-    },
+  try {
+    await dynamodb.describeTable({TableName: tableName}).promise();
+  } catch (e) {
+    cli.consoleLog(`CreateGlobalTable: ${chalk.yellow('Other region table doesn\'t exist/ Skipping creation')}`);
+    return;
   }
 
-  await Promise.all(newRegions.map(r => createAndTagTable(r, tableName, createTableParams, tags, cli, creds)))
+  await Promise.all(newRegions.map(r => createAndTagTable(r, tableName, createTableParams, tags, cli, creds)));
 
-  const replicationGroup = [{ RegionName: region }]
-  newRegions.forEach(r => replicationGroup.push({ RegionName: r }))
+  const replicationGroup = [{ RegionName: region }];
+  newRegions.forEach(r => replicationGroup.push({ RegionName: r }));
 
   const param = {
     GlobalTableName: tableName,
     ReplicationGroup: replicationGroup,
   }
-  await dynamodb.createGlobalTable(param).promise()
+  await dynamodb.createGlobalTable(param).promise();
   cli.consoleLog(`CreateGlobalTable: ${chalk.yellow(`Created global table setup for ${tableName}...`)}`)
 }
 
