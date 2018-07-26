@@ -114,15 +114,18 @@ const createGlobalDynamodbTable = async function createGlobalDynamodbTable(serve
     const stackName = `${serverless.service.getServiceName()}-${serverless.getProvider('aws').getStage()}`
     const resp = await cfn.describeStacks({ StackName: stackName }).promise()
     const outputs = resp.Stacks[0].Outputs
+    console.log('Stack Outputs', JSON.stringify(outputs, null, 2));
 
     const globalTablesOptions = serverless.service.custom.globalTables
     if (!globalTablesOptions || globalTablesOptions.length === 0) {
       return
     }
+    console.log('globalTablesOptions', JSON.stringify(globalTablesOptions, null, 2));
     await Promise.all(globalTablesOptions.map((option) => {
       if (option.tableKey) {
         outputs.some((output) => {
           let tableName = ''
+          console.log('output.OutputKey', output.OutputKey);
           if (output.OutputKey === option.tableKey) {
             tableName = output.OutputValue
             createGlobalTable(
