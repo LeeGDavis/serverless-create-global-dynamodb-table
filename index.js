@@ -122,6 +122,7 @@ const createGlobalDynamodbTable = async function createGlobalDynamodbTable(serve
     }
     console.log('globalTablesOptions', JSON.stringify(globalTablesOptions, null, 2));
     await Promise.all(globalTablesOptions.map((option) => {
+      console.log('OPTION', option);
       if (option.tableKey) {
         outputs.some((output) => {
           let tableName = ''
